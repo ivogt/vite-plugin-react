@@ -2097,7 +2097,15 @@ export function vitePluginUseServer(
         return { code: `export {}`, map: null }
       }
       let code = ''
-      for (const meta of Object.values(manager.serverReferenceMetaMap)) {
+      // Sort for a stable build. Emission order follows map insertion, which is
+      // transform/pass-order-dependent. The sibling maps are sorted in
+      // stabilize(), but that runs after the rsc build has already emitted this
+      // manifest, so sort here at emit time (covering every environment that
+      // emits it) rather than in stabilize().
+      const serverReferenceMetas = Object.values(
+        manager.serverReferenceMetaMap,
+      ).sort((a, b) => a.referenceKey.localeCompare(b.referenceKey))
+      for (const meta of serverReferenceMetas) {
         const key = JSON.stringify(meta.referenceKey)
         const id = JSON.stringify(meta.importId)
         const exports = meta.exportNames
